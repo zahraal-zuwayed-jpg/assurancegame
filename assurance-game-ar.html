@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>لعبة الطمأنة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12151F;
+    --panel:#1A1F2C;
+    --panel-2:#0E1119;
+    --border:#2A3040;
+    --border-soft:#232838;
+    --text:#F2F5FA;
+    --text-dim:#9AA3B8;
+    --text-faint:#5C6478;
+    --mint:#2DE3A6;
+    --mint-dim:rgba(45,227,166,.14);
+    --mint-strong:#1FCB92;
+    --red:#FF4D6D;
+    --red-dim:rgba(255,77,109,.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(900px 460px at 50% -10%, rgba(45,227,166,.08), transparent 60%),
+      var(--bg);
+    background-attachment:fixed;
+    color:var(--text);
+    font-family:'Tajawal',system-ui,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{ max-width:720px; margin:0 auto; padding:26px 20px 70px; }
+
+  h1.gametitle{ text-align:center; font-size:22px; font-weight:900; margin:0; }
+  p.gamesub{ text-align:center; color:var(--text-faint); font-size:12.5px; margin:6px 0 24px; }
+
+  .card{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:16px;
+    overflow:hidden; position:relative;
+  }
+  .progressbar{ height:3px; width:100%; background:var(--border-soft); }
+  .progressbar-fill{ height:100%; background:linear-gradient(90deg,var(--mint),#8FF6D9); transition:width .4s ease; }
+
+  .card-top{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 18px 0; font-family:'Inter',sans-serif; font-size:12px; color:var(--text-faint);
+  }
+  .card-top .timer{ font-weight:700; color:var(--text-dim); }
+  .card-top .timer.warn{ color:var(--red); }
+  .card-top .score b{ color:var(--mint); }
+
+  .dialogue{
+    padding:50px 30px 36px; text-align:center;
+  }
+  .dialogue .line{ font-size:19px; font-weight:800; line-height:1.75; color:var(--text); }
+  .dialogue .who{ color:var(--mint); }
+
+  .btns{ padding:0 24px 20px; display:flex; flex-direction:column; gap:12px; }
+  .choice{
+    width:100%; background:#FFFFFF; border:2px solid #FFFFFF; border-radius:10px;
+    padding:13px 16px; display:flex; align-items:center; gap:10px; cursor:pointer;
+    font-family:'Tajawal',sans-serif; font-size:15px; font-weight:700; color:#12151F;
+    transition:.15s ease;
+  }
+  .choice:hover{ background:#F0F2F6; }
+  .choice .badge{
+    flex:none; width:24px; height:24px; border-radius:50%; display:flex; align-items:center;
+    justify-content:center; font-size:12px; font-weight:800; font-family:'Inter',sans-serif;
+    background:var(--mint-dim); color:var(--mint-strong);
+  }
+  .choice.fail .badge{ background:var(--red-dim); color:var(--red); }
+  .choice.selected.correct{ border-color:var(--mint-strong); }
+  .choice.selected.wrong{ border-color:var(--red); }
+  .choice.locked{ pointer-events:none; }
+  .choice.dim{ opacity:.4; }
+
+  .feedback{ margin:0 24px 20px; padding:14px 16px; border-radius:10px; background:#FFFFFF; border:2px solid; display:none; }
+  .feedback.show{ display:block; animation:fadeIn .25s ease; }
+  .feedback.good{ border-color:var(--mint-strong); }
+  .feedback.bad{ border-color:var(--red); }
+  .feedback .tag{
+    font-family:'Tajawal',sans-serif; font-size:12px; font-weight:800; letter-spacing:.02em;
+    display:inline-block; margin-bottom:8px; padding:3px 12px; border-radius:6px; color:#fff;
+  }
+  .feedback.good .tag{ background:var(--mint-strong); }
+  .feedback.bad .tag{ background:var(--red); }
+  .feedback p{ margin:0; font-size:13.5px; line-height:1.8; color:#12151F; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:translateY(0);} }
+
+  .nextwrap{ padding:0 24px 26px; display:flex; justify-content:center; }
+  .nextbtn{
+    background:var(--mint-strong); color:#08160F; border:none; border-radius:8px;
+    padding:11px 30px; font-family:'Tajawal',sans-serif; font-weight:800; font-size:14px;
+    cursor:pointer; display:none;
+  }
+  .nextbtn.show{ display:block; }
+  .nextbtn:hover{ filter:brightness(1.06); }
+
+  .shake{ animation:shake .35s; }
+  @keyframes shake{
+    10%,90%{ transform:translateX(-1px); }
+    20%,80%{ transform:translateX(2px); }
+    30%,50%,70%{ transform:translateX(-4px); }
+    40%,60%{ transform:translateX(4px); }
+  }
+
+  .results{ display:none; flex-direction:column; align-items:center; text-align:center; padding:60px 26px; }
+  .results.show{ display:flex; }
+  .results .icon{ font-size:52px; margin-bottom:14px; }
+  .results h2{ font-size:24px; margin:0 0 8px; }
+  .results h2.status-pass{ color:var(--mint); }
+  .results h2.status-fail{ color:var(--red); }
+  .results p{ color:var(--text-dim); font-size:14px; max-width:420px; line-height:1.8; margin:0 0 26px; }
+  .retrybtn{
+    background:var(--panel); border:1px solid var(--border); color:var(--text);
+    border-radius:10px; padding:12px 28px; font-family:'Tajawal',sans-serif;
+    font-weight:700; font-size:14px; cursor:pointer;
+  }
+  .retrybtn:hover{ border-color:#3A4258; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="gametitle">🧭 لعبة الطمأنة</h1>
+  <p class="gamesub">٥ أسئلة — ٣٠ ثانية لكل سؤال</p>
+
+  <div class="card" id="quizCard">
+    <div class="progressbar"><div class="progressbar-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="card-top">
+      <span class="timer" id="timerEl">٣٠ث</span>
+      <span class="score">النتيجة: <b id="scoreEl">0</b>/<span id="totalEl">5</span></span>
+    </div>
+
+    <div class="dialogue" id="dialogueEl"></div>
+
+    <div class="btns" id="btnsWrap">
+      <div class="choice pass" data-val="pass"><span class="badge">أ</span>ناجح ✅</div>
+      <div class="choice fail" data-val="fail"><span class="badge">ب</span>فاشل ❌</div>
+    </div>
+
+    <div class="feedback" id="feedbackBox">
+      <span class="tag" id="feedbackTag"></span>
+      <p id="feedbackText"></p>
+    </div>
+
+    <div class="nextwrap">
+      <button class="nextbtn" id="nextBtn">السؤال التالي ←</button>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="icon" id="resultIcon">🏁</div>
+    <h2 id="resultTitle"></h2>
+    <p id="resultSub"></p>
+    <button class="retrybtn" id="retryBtn">إعادة المحاولة</button>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    customer: "لقد فشلت عملية الدفع، لكن تم خصم المبلغ.",
+    agent: "أتفهم أن عملية الدفع فشلت رغم خصم المبلغ. لقد تحققت من الأمر ووجدت أن...",
+    correct: "pass",
+    fb: {
+      pass: "ممتاز! الرد القوي يربط بين الفهم والإجراء. الإشارة إلى المشكلة تحديداً وذكر الخطوة التالية بوضوح يحقق الركائز الأساسية بشكل كامل، دون تقديم أي وعود غير مؤكدة.",
+      fail: "معيار الطمأنة يفشل فقط عند تجاهل الركائز الأساسية، أو حدوثه في وقت مبكر جداً، أو خلق توقعات غير واقعية (مثل الوعد باسترداد المبلغ قبل التحقق). الإشارة إلى المشكلة بدقة وتحديد خطوة تالية واضحة هو بالضبط ما يتطلبه المعيار."
+    }
+  },
+  {
+    customer: "كيف يمكنني تغيير رقم جوالي؟",
+    agent: "لتغيير رقمك، اذهب إلى الملف الشخصي وقم بتحديث رقم الجوال.",
+    correct: "fail",
+    fb: {
+      pass: "تقديم الخطوات مباشرة يُفوّت في الواقع متطلب الطمأنة. يشترط المعيار وجود جسر واضح بين الفهم والإجراء، مثل إظهار الاستعداد للمساعدة، قبل الانتقال مباشرة إلى الحل.",
+      fail: "بالضبط. الانتقال المباشر إلى الحل يتجاوز خطوة الطمأنة بالكامل. يتطلب المعيار إنشاء جسر، مثل إظهار الاستعداد الصريح للمساعدة أو الإقرار بالطلب، قبل الدخول في التعليمات الفعلية."
+    }
+  },
+  {
+    customer: "تم خصم رسوم تمديد تاريخ الاستحقاق مرتين.",
+    agent: "سأساعدك بخصوص آخر محاولة شراء قمت بها.",
+    correct: "fail",
+    fb: {
+      pass: "هذا يُعد إخفاقاً لأنه يخالف ركيزة أساسية: الفهم الدقيق. ذكر «محاولة شراء» بينما سأل العميل عن «رسوم التمديد» يُظهر نقصاً في الفهم، مما يُسقط معيار الطمأنة فوراً.",
+      fail: "صحيح. هذا يفشل لأن الإشارة إلى المشكلة غير دقيقة إطلاقاً. سأل العميل عن رسوم التمديد، لكن الرد يذكر محاولة شراء. الطمأنة الحقيقية تتطلب إثبات فهم المشكلة الأساسية أولاً."
+    }
+  },
+  {
+    customer: "هل تمت معالجة عملية استرداد المبلغ الخاصة بي؟",
+    agent: "بما أنك تسأل عن استرداد المبلغ، لقد تحققت من حسابك وإليك تفاصيل الاسترداد.",
+    correct: "pass",
+    fb: {
+      pass: "بالضبط. هذا يطبق معيار الطمأنة بشكل صحيح. الإشارة إلى الاستفسار المحدد وذكر الخطوة التالية فوراً يربط الفهم بالإجراء بشكل مثالي، دون الوعد بنتيجة محددة.",
+      fail: "هذا في الواقع بيان طمأنة ناجح. فهو يحقق الركائز الأساسية من خلال الإشارة الصريحة إلى استفسار العميل وتحديد توقع واضح وواقعي لما سيحدث بعد ذلك."
+    }
+  },
+  {
+    customer: "لا أستطيع إضافة بطاقة بنكية إلى حسابي.",
+    agent: "أتفهم أنك بحاجة للمساعدة في إضافة تفاصيل بطاقتك البنكية إلى حسابك. فيما يلي الخطوات، وسأقوم بإرشادك خلالها.",
+    correct: "pass",
+    fb: {
+      pass: "صحيح. هذا يطبق ركائز الطمأنة بشكل مثالي. فهو يشير مباشرة إلى المشكلة المفهومة ويحدد فوراً توقعاً واضحاً للخطوة التالية (تقديم الإرشاد).",
+      fail: "تنجح الطمأنة عندما تربط الفهم بالإجراء. الإقرار بالمشكلة المحددة وذكر الخطوة التالية الفورية يحقق المعيار بشكل كامل."
+    }
+  }
+];
+
+let current = 0;
+let score = 0;
+let timeLeft = 30;
+let timerInterval = null;
+const TOTAL_TIME = 30;
+
+const progressFill = document.getElementById('progressFill');
+const timerEl = document.getElementById('timerEl');
+const scoreEl = document.getElementById('scoreEl');
+const totalEl = document.getElementById('totalEl');
+const dialogueEl = document.getElementById('dialogueEl');
+const btnsWrap = document.getElementById('btnsWrap');
+const feedbackBox = document.getElementById('feedbackBox');
+const feedbackTag = document.getElementById('feedbackTag');
+const feedbackText = document.getElementById('feedbackText');
+const nextBtn = document.getElementById('nextBtn');
+const quizCard = document.getElementById('quizCard');
+const results = document.getElementById('results');
+
+totalEl.textContent = QUESTIONS.length;
+
+function toArabicDigits(n){
+  const map = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+  return String(n).split('').map(c => /[0-9]/.test(c) ? map[c] : c).join('');
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  timeLeft = TOTAL_TIME;
+  timerEl.classList.remove('warn');
+  timerEl.textContent = toArabicDigits(timeLeft) + 'ث';
+  timerInterval = setInterval(()=>{
+    timeLeft--;
+    timerEl.textContent = toArabicDigits(Math.max(timeLeft,0)) + 'ث';
+    if(timeLeft <= 10){ timerEl.classList.add('warn'); }
+    if(timeLeft <= 0){
+      clearInterval(timerInterval);
+      lockChoices();
+      const q = QUESTIONS[current];
+      showFeedback(false, q.fb[q.correct === 'pass' ? 'fail' : 'pass'] || "انتهى الوقت! حاول الإجابة بسرعة أكبر في المرة القادمة.");
+    }
+  },1000);
+}
+
+function loadQuestion(){
+  const q = QUESTIONS[current];
+  progressFill.style.width = (current/QUESTIONS.length*100)+'%';
+
+  dialogueEl.innerHTML = `
+    <div class="line"><span class="who">العميل:</span> «${q.customer}»</div>
+    <div class="line" style="margin-top:10px;"><span class="who">ممثل الدعم:</span> «${q.agent}»</div>
+  `;
+
+  document.querySelectorAll('.choice').forEach(c=>{
+    c.classList.remove('selected','correct','wrong','locked','dim');
+  });
+
+  feedbackBox.className = 'feedback';
+  nextBtn.classList.remove('show');
+  startTimer();
+}
+
+function lockChoices(){
+  document.querySelectorAll('.choice').forEach(c=> c.classList.add('locked'));
+}
+
+function selectChoice(val, el){
+  const q = QUESTIONS[current];
+  clearInterval(timerInterval);
+  lockChoices();
+
+  const isCorrect = (val === q.correct);
+  el.classList.add('selected', isCorrect ? 'correct' : 'wrong');
+  if(!isCorrect){
+    el.classList.add('shake');
+    document.querySelectorAll('.choice').forEach(c=>{
+      if(c.dataset.val === q.correct) c.classList.add('dim');
+    });
+  } else {
+    score++;
+    scoreEl.textContent = score;
+  }
+  showFeedback(isCorrect, q.fb[val]);
+  nextBtn.classList.add('show');
+}
+
+function showFeedback(good, text){
+  feedbackTag.textContent = good ? 'صحيح' : 'خطأ';
+  feedbackText.textContent = text;
+  feedbackBox.className = 'feedback show ' + (good ? 'good' : 'bad');
+}
+
+document.querySelectorAll('.choice').forEach(el=>{
+  el.addEventListener('click', ()=> selectChoice(el.dataset.val, el));
+});
+
+nextBtn.addEventListener('click', ()=>{
+  current++;
+  if(current >= QUESTIONS.length){
+    finish();
+  } else {
+    loadQuestion();
+  }
+});
+
+function finish(){
+  clearInterval(timerInterval);
+  progressFill.style.width = '100%';
+  quizCard.style.display = 'none';
+  results.classList.add('show');
+
+  const icon = document.getElementById('resultIcon');
+  const title = document.getElementById('resultTitle');
+  const sub = document.getElementById('resultSub');
+
+  if(score === QUESTIONS.length){
+    icon.textContent = '🏆';
+    title.textContent = 'إجابات مثالية! 💚';
+    title.className = 'status-pass';
+    sub.textContent = 'لقد ميّزت بدقة الردود التي تحقق معيار الطمأنة من تلك التي تخفق فيه.';
+  } else if(score >= Math.ceil(QUESTIONS.length*0.6)){
+    icon.textContent = '👍';
+    title.textContent = `النتيجة: ${toArabicDigits(score)} من ${toArabicDigits(QUESTIONS.length)}`;
+    title.className = 'status-pass';
+    sub.textContent = 'أداء جيد! راجع الملاحظات على الأسئلة التي أخطأت فيها لترسيخ معيار الطمأنة.';
+  } else {
+    icon.textContent = '🔁';
+    title.textContent = `النتيجة: ${toArabicDigits(score)} من ${toArabicDigits(QUESTIONS.length)}`;
+    title.className = 'status-fail';
+    sub.textContent = 'راجع ركائز معيار الطمأنة: الفهم الدقيق للمشكلة، وبناء جسر واضح نحو الإجراء، دون وعود غير مؤكدة.';
+  }
+}
+
+document.getElementById('retryBtn').addEventListener('click', ()=>{
+  current = 0; score = 0;
+  scoreEl.textContent = '0';
+  results.classList.remove('show');
+  quizCard.style.display = 'block';
+  progressFill.style.width = '0%';
+  loadQuestion();
+});
+
+loadQuestion();
+</script>
+</body>
+</html>
